@@ -51,9 +51,7 @@ testData = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=(height,width),
     batch_size=batchSize)
 
-#class names and sampling a few images
-classes = trainData.class_names
-testClasses = testData.class_names
+#sample additional images
 #plt.figure(figsize=(10,10))
 # for images, labels in trainData.take(1):
 #     for i in range(9):
@@ -62,6 +60,10 @@ testClasses = testData.class_names
 #         plt.title(classes[labels[i]])
 #         plt.axis("off")
 # plt.show()
+
+#class names
+classes = trainData.class_names
+testClasses = testData.class_names
 
 #buffer to hold the data in memory for faster performance
 autotune = tf.data.experimental.AUTOTUNE
@@ -73,9 +75,9 @@ testData = testData.cache().prefetch(buffer_size=autotune)
 #use max pool layers to reduce
 #flatten and then apply a dense layer to predict classes
 model = tf.keras.Sequential([
-    #layers.experimental.preprocessing.RandomFlip('horizontal', input_shape=(height, width, 3)),
-    #layers.experimental.preprocessing.RandomRotation(0.1),
-    #layers.experimental.preprocessing.RandomZoom(0.1),
+    layers.experimental.preprocessing.RandomFlip('horizontal', input_shape=(height, width, 3)),
+    #layers.experimental.preprocessing.RandomRotation(0.1), #rotation might not be as useful on this dataset because bird images are generally taken with specific orietations.
+    layers.experimental.preprocessing.RandomZoom(0.1),
     layers.experimental.preprocessing.Rescaling(1./255, input_shape=(height, width, 3)),
     layers.Conv2D(16, 3, padding='same', activation='relu'),
     layers.MaxPooling2D(),
@@ -116,5 +118,6 @@ for x, y in testData:
   labels = np.concatenate([labels, np.argmax(y.numpy(), axis=-1)])
 
 confusionMatrix = tf.math.confusion_matrix(labels=labels, predictions=predictions).numpy()
-print('{0}'.format(confusionMatrix))
+#print('{0}'.format(confusionMatrix))
 
+#need to export the confusion matrix to a useful format
