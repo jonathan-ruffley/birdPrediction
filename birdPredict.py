@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 #import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sb
 import random
 
 import PIL
@@ -120,4 +121,4 @@ for x, y in testData:
 confusionMatrix = tf.math.confusion_matrix(labels=labels, predictions=predictions).numpy()
 #print('{0}'.format(confusionMatrix))
 
-#need to export the confusion matrix to a useful format
+#plot the confusion matrix
