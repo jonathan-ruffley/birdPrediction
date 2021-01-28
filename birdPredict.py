@@ -12,7 +12,7 @@ import os
 import pathlib
 
 #load the IMAGES
-dataDirectory = './newBirds'
+dataDirectory = './newBirds2'
 
 dataDirectory = pathlib.Path(dataDirectory)
 imageCount = len(list(dataDirectory.glob('*/*.jpg')))
@@ -122,3 +122,4 @@ confusionMatrix = tf.math.confusion_matrix(labels=labels, predictions=prediction
 #print('{0}'.format(confusionMatrix))
 
 #plot the confusion matrix
+sb.heatmap(confusionMatrix, cmap='vlag')
