@@ -12,7 +12,7 @@ import os
 import pathlib
 
 #load the IMAGES
-dataDirectory = './newBirds2
+dataDirectory = './newBirds'
 
 dataDirectory = pathlib.Path(dataDirectory)
 imageCount = len(list(dataDirectory.glob('*/*.jpg')))
