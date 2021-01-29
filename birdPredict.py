@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
 import random
@@ -15,8 +15,9 @@ import pathlib
 dataDirectory = './newBirds'
 
 dataDirectory = pathlib.Path(dataDirectory)
-imageCount = len(list(dataDirectory.glob('*/*.jpg')))
-print('Image count: {0}\n'.format(imageCount))
+#imageCount = len(list(dataDirectory.glob('*/*.jpg')))
+#print('Image count: {0}\n'.format(imageCount))
+
 
 #test display an image
 # osprey = list(dataDirectory.glob('OSPREY/*'))
@@ -65,6 +66,10 @@ testData = tf.keras.preprocessing.image_dataset_from_directory(
 #class names
 classes = trainData.class_names
 testClasses = testData.class_names
+
+#check classes
+print(trainData.class_names)
+print(len(classes))
 
 #buffer to hold the data in memory for faster performance
 autotune = tf.data.experimental.AUTOTUNE
@@ -119,7 +124,38 @@ for x, y in testData:
   labels = np.concatenate([labels, np.argmax(y.numpy(), axis=-1)])
 
 confusionMatrix = tf.math.confusion_matrix(labels=labels, predictions=predictions).numpy()
-#print('{0}'.format(confusionMatrix))
 
 #plot the confusion matrix
-sb.heatmap(confusionMatrix, cmap='vlag')
+sb.heatmap(confusionMatrix, cmap='vlag') #, xticklabels=labels, yticklabels=labels)
+#plt.yticks(rotation=0, fontsize=6)
+#plt.xticks(fontsize=6)
+plt.show()
+plt.savefig('ConfusionMatrix.png')
+
+#analysis of model
+trace = np.trace(confusionMatrix)
+matrixSum = np.sum(confusionMatrix)
+diagonal = np.diag(confusionMatrix)
+
+
+#properties
+accuracy = trace / matrixSum
+falsePositives = np.sum(confusionMatrix, axis=0) - diagonal
+falseNegatives = np.sum(confusionMatrix, axis=1) - diagonal
+truePositives = diagonal
+
+trueNegatives = []
+for j in range(len(classes)):
+  tempMatrix = np.delete(confusionMatrix, j, 0)
+  tempMatrix = np.delete(tempMatrix, j, 1)
+  trueNegatives.append(sum(sum(tempMatrix)))
+
+#finish these
+# truePositiveRate =
+# trueNegativeRate =
+
+#prints
+print(accuracy)
+
+#print a matrix with properties for each label as columns
+
