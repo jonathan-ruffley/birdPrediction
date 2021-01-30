@@ -1,23 +1,37 @@
+#settings
+import logging
+import os
 import tensorflow as tf
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+logging.getLogger('tensorflow').setLevel(logging.FATAL)
+
+from tensorflow.python.util import deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+import warnings
+warnings.filterwarnings('ignore')
+
 from tensorflow.keras import layers
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
 import random
-
 import PIL
 import PIL.Image
-
-import os
 import pathlib
+import subprocess
+import math as m
+
+#settings
+# stderr = sys.stderr
+# sys.stderr = open(os.devnull, 'w')
+# sys.stderr = stderr
 
 #load the IMAGES
 dataDirectory = './newBirds'
-
 dataDirectory = pathlib.Path(dataDirectory)
-#imageCount = len(list(dataDirectory.glob('*/*.jpg')))
-#print('Image count: {0}\n'.format(imageCount))
-
+imageCountProcess = subprocess.Popen('find -type f -name "*jpg" | wc -l', stdout=subprocess.PIPE, shell=True)
+imageCount = int(imageCountProcess.communicate()[0].strip())
+print('Image count: {0}'.format(imageCount))
 
 #test display an image
 # osprey = list(dataDirectory.glob('OSPREY/*'))
@@ -32,14 +46,16 @@ dataDirectory = pathlib.Path(dataDirectory)
 batchSize = 32
 height=224
 width=224
+trainTestSplit = 0.2
+randomSeed = random.randint(0,1000000000)
 
 trainData = tf.keras.preprocessing.image_dataset_from_directory(
     dataDirectory,
     labels='inferred',
     label_mode='categorical',
-    validation_split=0.2,
+    validation_split=trainTestSplit,
     subset='training',
-    seed=324893,
+    seed=randomSeed,
     image_size=(height,width),
     batch_size=batchSize)
 
@@ -47,9 +63,9 @@ testData = tf.keras.preprocessing.image_dataset_from_directory(
     dataDirectory,
     labels='inferred',
     label_mode='categorical',
-    validation_split=0.2,
+    validation_split=trainTestSplit,
     subset='validation',
-    seed=324893,
+    seed=randomSeed,
     image_size=(height,width),
     batch_size=batchSize)
 
@@ -68,8 +84,8 @@ classes = trainData.class_names
 testClasses = testData.class_names
 
 #check classes
-print(trainData.class_names)
-print(len(classes))
+# print(trainData.class_names)
+# print(len(classes))
 
 #buffer to hold the data in memory for faster performance
 autotune = tf.data.experimental.AUTOTUNE
@@ -111,7 +127,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 model.summary()
     
-epochs=10
+epochs=15
 history = model.fit(
     trainData,
     validation_data=testData,
@@ -129,6 +145,9 @@ confusionMatrix = tf.math.confusion_matrix(labels=labels, predictions=prediction
 sb.heatmap(confusionMatrix, cmap='vlag') #, xticklabels=labels, yticklabels=labels)
 #plt.yticks(rotation=0, fontsize=6)
 #plt.xticks(fontsize=6)
+plt.xlabel('Predicted Class')
+plt.ylabel('Actual Class')
+plt.tight_layout()
 plt.show()
 plt.savefig('ConfusionMatrix.png')
 
@@ -136,7 +155,6 @@ plt.savefig('ConfusionMatrix.png')
 trace = np.trace(confusionMatrix)
 matrixSum = np.sum(confusionMatrix)
 diagonal = np.diag(confusionMatrix)
-
 
 #properties
 accuracy = trace / matrixSum
@@ -150,12 +168,28 @@ for j in range(len(classes)):
   tempMatrix = np.delete(tempMatrix, j, 1)
   trueNegatives.append(sum(sum(tempMatrix)))
 
-#finish these
-# truePositiveRate =
-# trueNegativeRate =
+#true positive rate: recall, true negative rate: specificity. Read more about these
+recall = truePositives / (truePositives + falseNegatives)
+specificity = trueNegatives / (trueNegatives + falsePositives)
 
-#prints
-print(accuracy)
+if len(trueNegatives) != len(truePositives) or len(trueNegatives) != len(falseNegatives) or len(trueNegatives) != len(falsePositives):
+  print('Error: inequivalent vector lengths')
+
+#test for incorrect calculations. Sum for all components of each class should be total number of images IN THE TEST SET
+print('Images: {0}'.format(imageCount))
+testImages = m.floor(imageCount*trainTestSplit)
+
+for k in range(len(classes)):
+  images = falsePositives[k] + falseNegatives[k] + truePositives[k] + trueNegatives[k]
+  if images != testImages:
+    print('Error in counts: {0} {1}'.format(images, testImages))
 
 #print a matrix with properties for each label as columns
+tempMatrix = np.transpose(np.array([classes, falsePositives, falseNegatives, truePositives, recall, specificity]))
+PM = tempMatrix[tempMatrix[:,4].argsort()]
+header = ['Class', 'FP', 'FN', 'TP', 'Recall', 'Specificity']
+print('\n\n{0:30}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}'.format(header[0], header[1], header[2], header[3], header[4], header[5]))
+for i in range(len(classes)):
+  print('{0:30}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5]))
 
+#next steps:
