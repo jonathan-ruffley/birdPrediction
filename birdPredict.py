@@ -122,12 +122,13 @@ model = tf.keras.Sequential([
     layers.Dense(len(classes))
     ])
 
-model.compile(optimizer='adam',
+opt = tf.keras.optimizers.Adam(learning_rate=0.001)
+model.compile(optimizer=opt,
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 model.summary()
     
-epochs=15
+epochs=1
 history = model.fit(
     trainData,
     validation_data=testData,
@@ -168,9 +169,11 @@ for j in range(len(classes)):
   tempMatrix = np.delete(tempMatrix, j, 1)
   trueNegatives.append(sum(sum(tempMatrix)))
 
-#true positive rate: recall, true negative rate: specificity. Read more about these
-recall = truePositives / (truePositives + falseNegatives)
-specificity = trueNegatives / (trueNegatives + falsePositives)
+#descriptive statistics 
+recall = truePositives / (truePositives + falseNegatives) #how many of the category are recognized as being in that category
+precision = truePositives / (truePositives + falsePositives) #how many of those picked for a cateogry are actually that category
+specificity = trueNegatives / (trueNegatives + falsePositives) #how many of those not in a catgory are correctly noted as not in the category
+fScore = (2 * precision * recall) / (precision + recall)
 
 if len(trueNegatives) != len(truePositives) or len(trueNegatives) != len(falseNegatives) or len(trueNegatives) != len(falsePositives):
   print('Error: inequivalent vector lengths')
@@ -185,11 +188,11 @@ for k in range(len(classes)):
     print('Error in counts: {0} {1}'.format(images, testImages))
 
 #print a matrix with properties for each label as columns
-tempMatrix = np.transpose(np.array([classes, falsePositives, falseNegatives, truePositives, recall, specificity]))
+tempMatrix = np.transpose(np.array([classes, falsePositives, falseNegatives, truePositives, recall, precision, specificity, fScore]))
 PM = tempMatrix[tempMatrix[:,4].argsort()]
-header = ['Class', 'FP', 'FN', 'TP', 'Recall', 'Specificity']
-print('\n\n{0:30}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}'.format(header[0], header[1], header[2], header[3], header[4], header[5]))
+header = ['Class', 'FP', 'FN', 'TP', 'Recall', 'Precision', 'Specificity', 'F-1 Score']
+print('\n\n{0:27}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}{6:>12}{7:>12}'.format(header[0], header[1], header[2], header[3], header[4], header[5], header[6], header[7]))
 for i in range(len(classes)):
-  print('{0:30}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5]))
+  print('{0:27}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}{6:>12.4}{7:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5], PM[i][6], PM[i][7]))
 
-#next steps:
+#next steps: add a learning rate schedule to reduce number of epochs needed. Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation
