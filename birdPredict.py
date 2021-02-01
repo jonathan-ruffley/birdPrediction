@@ -122,13 +122,13 @@ model = tf.keras.Sequential([
     layers.Dense(len(classes))
     ])
 
-opt = tf.keras.optimizers.Adam(learning_rate=0.001)
+opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
 model.compile(optimizer=opt,
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 model.summary()
     
-epochs=1
+epochs=20
 history = model.fit(
     trainData,
     validation_data=testData,
@@ -195,4 +195,4 @@ print('\n\n{0:27}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}{6:>12}{7:>12}'.format(header[0]
 for i in range(len(classes)):
   print('{0:27}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}{6:>12.4}{7:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5], PM[i][6], PM[i][7]))
 
-#next steps: add a learning rate schedule to reduce number of epochs needed. Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation
+#next steps: add a learning rate schedule to reduce number of epochs needed. Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation. Fix for network occassionally predicts same class for everything: other options besides modifying the learning rate or dropout?
