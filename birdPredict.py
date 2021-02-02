@@ -10,6 +10,7 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False
 import warnings
 warnings.filterwarnings('ignore')
 
+import tensorflow_addons as tfa
 from tensorflow.keras import layers
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,7 +32,7 @@ dataDirectory = './newBirds'
 dataDirectory = pathlib.Path(dataDirectory)
 imageCountProcess = subprocess.Popen('find -type f -name "*jpg" | wc -l', stdout=subprocess.PIPE, shell=True)
 imageCount = int(imageCountProcess.communicate()[0].strip())
-print('Image count: {0}'.format(imageCount))
+#print('Image count: {0}'.format(imageCount))
 
 #test display an image
 # osprey = list(dataDirectory.glob('OSPREY/*'))
@@ -122,13 +123,24 @@ model = tf.keras.Sequential([
     layers.Dense(len(classes))
     ])
 
-opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
+initialLearningRate = 0.00001
+maximalLearningRate = 0.0005
+ 
+
+learningRate = tfa.optimizers.CyclicalLearningRate( \
+                      initial_learning_rate = initialLearningRate, \
+                      maximal_learning_rate = maximalLearningRate, \
+                      step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
+                      scale_fn = lambda x: 1.0,
+                      scale_mode = 'iterations'
+)
+opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
 model.compile(optimizer=opt,
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 model.summary()
     
-epochs=20
+epochs=15
 history = model.fit(
     trainData,
     validation_data=testData,
