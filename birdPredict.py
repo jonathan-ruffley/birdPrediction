@@ -123,24 +123,33 @@ model = tf.keras.Sequential([
     layers.Dense(len(classes))
     ])
 
-initialLearningRate = 0.00001
-maximalLearningRate = 0.0005
- 
+initialLearningRate = 0.0009 #try decreasing this value because the loss increases for the first part of each epoch
+finalLearningRate = 0.0001
+#maximalLearningRate = 0.001
+epochs = 25
 
-learningRate = tfa.optimizers.CyclicalLearningRate( \
-                      initial_learning_rate = initialLearningRate, \
-                      maximal_learning_rate = maximalLearningRate, \
-                      step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
-                      scale_fn = lambda x: 1.0,
-                      scale_mode = 'iterations'
+#linear decay
+learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
+                      initial_learning_rate = initialLearningRate, 
+                      decay_steps = 1,
+                      decay_rate = 0.000001, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
+                      staircase = False
 )
+
+#cyclical
+#learningRate = tfa.optimizers.CyclicalLearningRate( \
+                      #initial_learning_rate = initialLearningRate, \
+                      #maximal_learning_rate = maximalLearningRate, \
+                      #step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
+                      #scale_fn = lambda x: 1.0,
+                      #scale_mode = 'iterations'
+#)
 opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
 model.compile(optimizer=opt,
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 model.summary()
     
-epochs=15
 history = model.fit(
     trainData,
     validation_data=testData,
@@ -199,12 +208,12 @@ for k in range(len(classes)):
   if images != testImages:
     print('Error in counts: {0} {1}'.format(images, testImages))
 
-#print a matrix with properties for each label as columns
-tempMatrix = np.transpose(np.array([classes, falsePositives, falseNegatives, truePositives, recall, precision, specificity, fScore]))
+#print a matrix with properties for each label as columns. Could add specificity here but it is consistently > 0.98 for every class, does not yield useful info.
+tempMatrix = np.transpose(np.array([classes, falsePositives, falseNegatives, truePositives, recall, precision, fScore]))
 PM = tempMatrix[tempMatrix[:,4].argsort()]
-header = ['Class', 'FP', 'FN', 'TP', 'Recall', 'Precision', 'Specificity', 'F-1 Score']
-print('\n\n{0:27}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}{6:>12}{7:>12}'.format(header[0], header[1], header[2], header[3], header[4], header[5], header[6], header[7]))
+header = ['Class', 'FP', 'FN', 'TP', 'Recall', 'Precision', 'F-1 Score']
+print('\n\n{0:27}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}{6:>12}'.format(header[0], header[1], header[2], header[3], header[4], header[5], header[6]))
 for i in range(len(classes)):
-  print('{0:27}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}{6:>12.4}{7:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5], PM[i][6], PM[i][7]))
+  print('{0:27}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}{6:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5], PM[i][6]))
 
-#next steps: add a learning rate schedule to reduce number of epochs needed. Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation. Fix for network occassionally predicts same class for everything: other options besides modifying the learning rate or dropout?
+#next steps: add a learning rate schedule to reduce number of epochs needed. Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation.
