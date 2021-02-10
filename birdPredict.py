@@ -168,7 +168,7 @@ for x in range(2):
 plt.title('MAE for bird species prediction')
 plt.ylabel('MAE')
 plt.xlabel('Epoch')
-plt.legend(loc='best')
+plt.legend(loc='best', frameon=False)
 plt.show()
 
 predictions = np.array([])
