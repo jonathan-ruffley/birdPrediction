@@ -123,39 +123,53 @@ model = tf.keras.Sequential([
     layers.Dense(len(classes))
     ])
 
+
+#update this to test variety of values for inverse time decay and cyclical to determine optimum, and then compare the best of each method against each other
 initialLearningRate = 0.0009 #try decreasing this value because the loss increases for the first part of each epoch
 finalLearningRate = 0.0001
-#maximalLearningRate = 0.001
-epochs = 3
+maximalLearningRate = 0.001
+epochs = 2
 
-#linear decay
-learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
-                      initial_learning_rate = initialLearningRate, 
-                      decay_steps = 1,
-                      decay_rate = 0.000001, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
-                      staircase = False
-)
+for x in range(2):
+  if x == 0:
+    #linear decay
+    method = 'ITD'
+    learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
+                          initial_learning_rate = initialLearningRate, 
+                          decay_steps = 1,
+                          decay_rate = 0.000001, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
+                          staircase = False)
+  elif x == 1:
+    #cyclical
+    method = 'cyclical'
+    learningRate = tfa.optimizers.CyclicalLearningRate(
+                          initial_learning_rate = initialLearningRate,
+                          maximal_learning_rate = maximalLearningRate,
+                          step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
+                          scale_fn = lambda x: 1.0,
+                          scale_mode = 'iterations')
 
-#cyclical
-#learningRate = tfa.optimizers.CyclicalLearningRate( \
-                      #initial_learning_rate = initialLearningRate, \
-                      #maximal_learning_rate = maximalLearningRate, \
-                      #step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
-                      #scale_fn = lambda x: 1.0,
-                      #scale_mode = 'iterations'
-#)
+  opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
+  model.compile(optimizer=opt,
+                loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+  model.summary()
 
-opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
-model.compile(optimizer=opt,
-              loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
-model.summary()
-    
-history = model.fit(
-    trainData,
-    validation_data=testData,
-    epochs=epochs,
-    )
+  history = model.fit(
+      trainData,
+      validation_data=testData,
+      epochs=epochs,
+      )
+  plt.plot(history.history['loss'], label='Training {0}'.format(method))
+  plt.plot(history.history['val_loss'], label='Validation {0}'.format(method))
+
+#make some plots of the training process
+#mean actual error.
+plt.title('MAE for bird species prediction')
+plt.ylabel('MAE')
+plt.xlabel('Epoch')
+plt.legend(loc='best')
+plt.show()
 
 predictions = np.array([])
 labels =  np.array([])
@@ -218,4 +232,6 @@ print('\n\n{0:27}{1:>4}{2:>4}{3:>4}{4:>8}{5:>12}{6:>12}'.format(header[0], heade
 for i in range(len(classes)):
   print('{0:27}{1:>4}{2:>4}{3:>4}{4:>8.4}{5:>12.4}{6:>12.4}'.format(PM[i][0], PM[i][1], PM[i][2], PM[i][3], PM[i][4], PM[i][5], PM[i][6]))
 
-#next steps: add a learning rate schedule to reduce number of epochs needed. Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation.
+#next steps:
+#1 optimize the learning rate for inverse time decay and cyclical, then compare best performance against each other
+#2 Add a loop and run 3 times, save the performance matrix each time and rank the classes from worst to best performance to evaluate opportunities for data set augmentation.
