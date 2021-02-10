@@ -6,7 +6,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 logging.getLogger('tensorflow').setLevel(logging.FATAL)
 
 from tensorflow.python.util import deprecation
-deprecation._PRINT_DEPRECATION_WARNINGS = False
+deprecation._PRINT_DEPRECATIN_WARNINGS = False
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -126,7 +126,7 @@ model = tf.keras.Sequential([
 initialLearningRate = 0.0009 #try decreasing this value because the loss increases for the first part of each epoch
 finalLearningRate = 0.0001
 #maximalLearningRate = 0.001
-epochs = 25
+epochs = 3
 
 #linear decay
 learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
@@ -144,6 +144,7 @@ learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
                       #scale_fn = lambda x: 1.0,
                       #scale_mode = 'iterations'
 #)
+
 opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
 model.compile(optimizer=opt,
               loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
@@ -153,7 +154,8 @@ model.summary()
 history = model.fit(
     trainData,
     validation_data=testData,
-    epochs=epochs)
+    epochs=epochs,
+    )
 
 predictions = np.array([])
 labels =  np.array([])
