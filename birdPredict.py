@@ -128,27 +128,31 @@ model = tf.keras.Sequential([
 initialLearningRate = 0.0009 #try decreasing this value because the loss increases for the first part of each epoch
 finalLearningRate = 0.0001
 maximalLearningRate = 0.001
-epochs = 2
+epochs = 3
 
-for x in range(2):
-  if x == 0:
-    #linear decay
-    method = 'ITD'
-    learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
-                          initial_learning_rate = initialLearningRate, 
-                          decay_steps = 1,
-                          decay_rate = 0.000001, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
-                          staircase = False)
-  elif x == 1:
+a = lambda x: 1.0
+b = lambda x: x
+functions = (a,b)
+printFunctions = ['lambda x: 1.0', 'lambda x: x']
+
+for c, i in enumerate(functions):
+  # if x == 0:
+  #   #linear decay
+  #   method = 'ITD'
+  #   learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
+  #                         initial_learning_rate = initialLearningRate, 
+  #                         decay_steps = 1,
+  #                         decay_rate = 0.000002, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
+  #                         staircase = False)
     #cyclical
-    method = 'cyclical'
-    learningRate = tfa.optimizers.CyclicalLearningRate(
-                          initial_learning_rate = initialLearningRate,
-                          maximal_learning_rate = maximalLearningRate,
-                          step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
-                          scale_fn = lambda x: 1.0,
-                          scale_mode = 'iterations')
-
+  method = 'cyclical'
+  learningRate = tfa.optimizers.CyclicalLearningRate(
+                        initial_learning_rate = initialLearningRate,
+                        maximal_learning_rate = maximalLearningRate,
+                        step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
+                        scale_fn = i,
+                        scale_mode = 'iterations')
+  
   opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
   model.compile(optimizer=opt,
                 loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
@@ -160,8 +164,8 @@ for x in range(2):
       validation_data=testData,
       epochs=epochs,
       )
-  plt.plot(history.history['loss'], label='Training {0}'.format(method))
-  plt.plot(history.history['val_loss'], label='Validation {0}'.format(method))
+  plt.plot(history.history['loss'], label='Training {0}'.format(printFunctions[c]))
+  plt.plot(history.history['val_loss'], label='Validation {0}'.format(printFunctions[c]))
 
 #make some plots of the training process
 #mean actual error.
