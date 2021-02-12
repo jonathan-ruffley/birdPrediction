@@ -123,36 +123,8 @@ model = tf.keras.Sequential([
     layers.Dense(len(classes))
     ])
 
-
-#update this to test variety of values for inverse time decay and cyclical to determine optimum, and then compare the best of each method against each other
-initialLearningRate = 0.0009 #try decreasing this value because the loss increases for the first part of each epoch
-finalLearningRate = 0.0001
-maximalLearningRate = 0.001
-epochs = 3
-
-a = lambda x: 1.0
-b = lambda x: x
-functions = (a,b)
-printFunctions = ['lambda x: 1.0', 'lambda x: x']
-
-for c, i in enumerate(functions):
-  # if x == 0:
-  #   #linear decay
-  #   method = 'ITD'
-  #   learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
-  #                         initial_learning_rate = initialLearningRate, 
-  #                         decay_steps = 1,
-  #                         decay_rate = 0.000002, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
-  #                         staircase = False)
-    #cyclical
-  method = 'cyclical'
-  learningRate = tfa.optimizers.CyclicalLearningRate(
-                        initial_learning_rate = initialLearningRate,
-                        maximal_learning_rate = maximalLearningRate,
-                        step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate) * batchSize),
-                        scale_fn = i,
-                        scale_mode = 'iterations')
-  
+#function to run model
+def runModel():
   opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
   model.compile(optimizer=opt,
                 loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
@@ -164,8 +136,50 @@ for c, i in enumerate(functions):
       validation_data=testData,
       epochs=epochs,
       )
-  plt.plot(history.history['loss'], label='Training {0}'.format(printFunctions[c]))
-  plt.plot(history.history['val_loss'], label='Validation {0}'.format(printFunctions[c]))
+  plt.plot(history.history['loss'], label='Training {0}'.format(label))
+  plt.plot(history.history['val_loss'], label='Validation {0}'.format(label))
+
+
+#update this to test variety of values for inverse time decay and cyclical to determine optimum, and then compare the best of each method against each other
+initialLearningRate = [0.0009, 0.00075, 0.0005] #try decreasing this value because the loss increases for the first part of each epoch
+finalLearningRate = 0.0001
+maximalLearningRate = 0.001
+epochs = 5
+
+
+#learning rate model selection
+a = lambda x: x
+b = lambda x: 1.0
+functions = (a)
+printFunctions = ['lambda x: x'] #, 'lambda x: x']
+
+#range of number of schedulers being tested
+for j in range(2):
+  if j == 0:
+    for k in range(len(initialLearningRate)):
+    #linear decay
+      label = 'ITD' + str(initialLearningRate[k])
+      learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
+                             initial_learning_rate = initialLearningRate[k], 
+                             decay_steps = 1,
+                             decay_rate = 0.0000005, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
+                             staircase = False)
+      runModel()
+
+  if j == 1:
+    #cyclical
+    if True:
+    #for c, i in enumerate(functions):
+      for k in range(len(initialLearningRate)):
+        method = 'cyclical'
+        learningRate = tfa.optimizers.CyclicalLearningRate(
+                            initial_learning_rate = initialLearningRate[k],
+                            maximal_learning_rate = maximalLearningRate,
+                            step_size = (imageCount * (1 - trainTestSplit)) / ((maximalLearningRate - initialLearningRate[k]) * batchSize),
+                            scale_fn = a, #if multiple functions tested switch to i, change executor from if True to the commented for loop
+                            scale_mode = 'iterations')
+        label = method + str(initialLearningRate[k]) #printed in legend
+        runModel()
 
 #make some plots of the training process
 #mean actual error.
