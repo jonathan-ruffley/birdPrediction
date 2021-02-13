@@ -21,6 +21,7 @@ import PIL.Image
 import pathlib
 import subprocess
 import math as m
+from itertools import cycle
 
 #settings
 # stderr = sys.stderr
@@ -130,22 +131,28 @@ def runModel():
                 loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
   model.summary()
-
+  print(label)
   history = model.fit(
       trainData,
       validation_data=testData,
       epochs=epochs,
       )
-  plt.plot(history.history['loss'], label='Training {0}'.format(label))
-  plt.plot(history.history['val_loss'], label='Validation {0}'.format(label))
+  current = next(linecycler)
+  plt.plot(history.history['loss'], label='Training {0}'.format(label), linestyle=current)
+  plt.plot(history.history['val_loss'], label='Validation {0}'.format(label), linestyle=current)
 
 
 #update this to test variety of values for inverse time decay and cyclical to determine optimum, and then compare the best of each method against each other
-initialLearningRate = [0.0009, 0.00075, 0.0005] #try decreasing this value because the loss increases for the first part of each epoch
+#initialLearningRate = [0.0009, 0.00075, 0.0005] #try decreasing this value because the loss increases for the first part of each epoch
 finalLearningRate = 0.0001
 maximalLearningRate = 0.001
-epochs = 5
+decayRate = [0.000001, 0.0000001, 0.00000001]
+staircaseFlag = [False, True]
+epochs = 3
 
+#plot cycler
+lines = ['-', '--', '-.', ':']
+linecycler = cycle(lines)
 
 #learning rate model selection
 a = lambda x: x
@@ -154,24 +161,28 @@ functions = (a)
 printFunctions = ['lambda x: x'] #, 'lambda x: x']
 
 #range of number of schedulers being tested
-for j in range(2):
+for j in range(1):
   if j == 0:
+    initialLearningRate = [0.001, 0.0001, 0.00001]
     for k in range(len(initialLearningRate)):
-    #linear decay
-      label = 'ITD' + str(initialLearningRate[k])
-      learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
-                             initial_learning_rate = initialLearningRate[k], 
-                             decay_steps = 1,
-                             decay_rate = 0.0000005, #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
-                             staircase = False)
+      for l in range(len(decayRate)):
+        for n in range(len(staircaseFlag)):
+          #linear decay
+          label = 'ITD ' + str(initialLearningRate[k]) + ' ' + str(decayRate[l]) + ' ' + str(staircaseFlag[n])
+          learningRate = tf.keras.optimizers.schedules.InverseTimeDecay(
+            initial_learning_rate = initialLearningRate[k], 
+            decay_steps = 1,
+            decay_rate = decayRate[l], #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
+            staircase = staircaseFlag[n])
       runModel()
 
   if j == 1:
     #cyclical
     if True:
     #for c, i in enumerate(functions):
+      initialLearningRate = [0.0001, 0.00001, 0.000001]
       for k in range(len(initialLearningRate)):
-        method = 'cyclical'
+        method = 'cyclical '
         learningRate = tfa.optimizers.CyclicalLearningRate(
                             initial_learning_rate = initialLearningRate[k],
                             maximal_learning_rate = maximalLearningRate,
@@ -186,8 +197,9 @@ for j in range(2):
 plt.title('MAE for bird species prediction')
 plt.ylabel('MAE')
 plt.xlabel('Epoch')
-plt.legend(loc='best', frameon=False)
+plt.legend(loc='best', frameon=False, fontsize=8)
 plt.show()
+plt.savefig('./learningRateMAE.png')
 
 predictions = np.array([])
 labels =  np.array([])
