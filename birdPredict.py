@@ -94,11 +94,17 @@ autotune = tf.data.experimental.AUTOTUNE
 trainData = trainData.cache().shuffle(1000).prefetch(buffer_size=autotune)
 testData = testData.cache().prefetch(buffer_size=autotune)
 
-#augment the dataset with zoomed and rotated images
-#use convolutional layers to maintain spatial information about the images
-#use max pool layers to reduce
-#flatten and then apply a dense layer to predict classes
-model = tf.keras.Sequential([
+
+
+#function to run model
+def runModel():
+  history = None
+  model = None
+  #augment the dataset with zoomed and rotated images
+  #use convolutional layers to maintain spatial information about the images
+  #use max pool layers to reduce
+  #flatten and then apply a dense layer to predict classes
+  model = tf.keras.Sequential([
     layers.experimental.preprocessing.RandomFlip('horizontal', input_shape=(height, width, 3)),
     #layers.experimental.preprocessing.RandomRotation(0.1), #rotation might not be as useful on this dataset because bird images are generally taken with specific orietations.
     layers.experimental.preprocessing.RandomZoom(0.1),
@@ -123,9 +129,6 @@ model = tf.keras.Sequential([
     layers.Dense(512, activation='relu'),
     layers.Dense(len(classes))
     ])
-
-#function to run model
-def runModel():
   opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
   model.compile(optimizer=opt,
                 loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
@@ -147,7 +150,9 @@ def runModel():
 finalLearningRate = 0.0001
 maximalLearningRate = 0.001
 decayRate = [0.000001, 0.0000001, 0.00000001]
-staircaseFlag = [False, True]
+true = True
+false = False
+staircaseFlag = [false]
 epochs = 3
 
 #plot cycler
@@ -174,7 +179,7 @@ for j in range(1):
             decay_steps = 1,
             decay_rate = decayRate[l], #(imageCount * (1 - trainTestSplit)) / ((initialLearningRate - finalLearningRate) * batchSize),
             staircase = staircaseFlag[n])
-      runModel()
+          runModel()
 
   if j == 1:
     #cyclical
