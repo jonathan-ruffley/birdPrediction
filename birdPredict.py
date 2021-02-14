@@ -94,58 +94,6 @@ autotune = tf.data.experimental.AUTOTUNE
 trainData = trainData.cache().shuffle(1000).prefetch(buffer_size=autotune)
 testData = testData.cache().prefetch(buffer_size=autotune)
 
-
-
-#function to run model
-def runModel():
-  history = None
-  model = None
-  #augment the dataset with zoomed and rotated images
-  #use convolutional layers to maintain spatial information about the images
-  #use max pool layers to reduce
-  #flatten and then apply a dense layer to predict classes
-  model = tf.keras.Sequential([
-    layers.experimental.preprocessing.RandomFlip('horizontal', input_shape=(height, width, 3)),
-    #layers.experimental.preprocessing.RandomRotation(0.1), #rotation might not be as useful on this dataset because bird images are generally taken with specific orietations.
-    layers.experimental.preprocessing.RandomZoom(0.1),
-    layers.experimental.preprocessing.Rescaling(1./255, input_shape=(height, width, 3)),
-    layers.Conv2D(16, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(32, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(64, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(128, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(256, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    # layers.Conv2D(512, 3, padding='same', activation='relu'),
-    # layers.MaxPooling2D(),
-    #layers.Conv2D(1024, 3, padding='same', activation='relu'),
-    #layers.MaxPooling2D(),
-    #dropout prevents overtraining by not allowing each node to see each datapoint
-    layers.Dropout(0.65),
-    layers.Flatten(),
-    layers.Dense(512, activation='relu'),
-    layers.Dense(len(classes))
-    ])
-  opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
-  model.compile(optimizer=opt,
-                loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
-                metrics=['accuracy'])
-  model.summary()
-  print(label)
-  history = model.fit(
-      trainData,
-      validation_data=testData,
-      epochs=epochs,
-      )
-  current = next(linecycler)
-  plt.plot(history.history['loss'], label='Training {0}'.format(label), linestyle=current)
-  plt.plot(history.history['val_loss'], label='Validation {0}'.format(label), linestyle=current)
-
-
-#update this to test variety of values for inverse time decay and cyclical to determine optimum, and then compare the best of each method against each other
 #initialLearningRate = [0.0009, 0.00075, 0.0005] #try decreasing this value because the loss increases for the first part of each epoch
 finalLearningRate = 0.0001
 maximalLearningRate = 0.001
@@ -195,14 +143,63 @@ for j in range(1):
         label = method + str(initialLearningRate[k]) #printed in legend
         runModel()
 
+#function to run model
+def runModel():
+  global history = None
+  global model = None
+  #augment the dataset with zoomed and rotated images
+  #use convolutional layers to maintain spatial information about the images
+  #use max pool layers to reduce
+  #flatten and then apply a dense layer to predict classes
+  model = tf.keras.Sequential([
+    layers.experimental.preprocessing.RandomFlip('horizontal', input_shape=(height, width, 3)),
+    #layers.experimental.preprocessing.RandomRotation(0.1), #rotation might not be as useful on this dataset because bird images are generally taken with specific orietations.
+    layers.experimental.preprocessing.RandomZoom(0.1),
+    layers.experimental.preprocessing.Rescaling(1./255, input_shape=(height, width, 3)),
+    layers.Conv2D(16, 3, padding='same', activation='relu'),
+    layers.MaxPooling2D(),
+    layers.Conv2D(32, 3, padding='same', activation='relu'),
+    layers.MaxPooling2D(),
+    layers.Conv2D(64, 3, padding='same', activation='relu'),
+    layers.MaxPooling2D(),
+    layers.Conv2D(128, 3, padding='same', activation='relu'),
+    layers.MaxPooling2D(),
+    layers.Conv2D(256, 3, padding='same', activation='relu'),
+    layers.MaxPooling2D(),
+    # layers.Conv2D(512, 3, padding='same', activation='relu'),
+    # layers.MaxPooling2D(),
+    #layers.Conv2D(1024, 3, padding='same', activation='relu'),
+    #layers.MaxPooling2D(),
+    #dropout prevents overtraining by not allowing each node to see each datapoint
+    layers.Dropout(0.65),
+    layers.Flatten(),
+    layers.Dense(512, activation='relu'),
+    layers.Dense(len(classes))
+    ])
+  opt = tf.keras.optimizers.Adam(learning_rate=learningRate)
+  model.compile(optimizer=opt,
+                loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+  model.summary()
+  print(label)
+  history = model.fit(
+      trainData,
+      validation_data=testData,
+      epochs=epochs,
+      )
+  current = next(linecycler)
+  plt.plot(history.history['loss'], label='Training {0}'.format(label), linestyle=current)
+  plt.plot(history.history['val_loss'], label='Validation {0}'.format(label), linestyle=current)
+
+
 #make some plots of the training process
 #mean actual error.
 plt.title('MAE for bird species prediction')
 plt.ylabel('MAE')
 plt.xlabel('Epoch')
 plt.legend(loc='best', frameon=False, fontsize=8)
-plt.show()
 plt.savefig('./learningRateMAE.png')
+plt.show()
 
 predictions = np.array([])
 labels =  np.array([])
