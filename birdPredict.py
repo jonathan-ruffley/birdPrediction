@@ -98,8 +98,11 @@ testData = testData.cache().prefetch(buffer_size=autotune)
 finalLearningRate = 0.0001
 maximalLearningRate = 0.001
 decayRate = [0.000001, 0.0000001, 0.00000001]
-staircaseFlag = [True, False]
+staircaseFlag = [False] #, True]
+global history
+global model
 epochs = 3
+
 
 #plot cycler
 lines = ['-', '--', '-.', ':']
@@ -145,8 +148,8 @@ for j in range(1):
 
 #function to run model
 def runModel():
-  global history = None
-  global model = None
+  history = None
+  model = None
   #augment the dataset with zoomed and rotated images
   #use convolutional layers to maintain spatial information about the images
   #use max pool layers to reduce
