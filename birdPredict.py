@@ -150,9 +150,7 @@ def runModel():
 finalLearningRate = 0.0001
 maximalLearningRate = 0.001
 decayRate = [0.000001, 0.0000001, 0.00000001]
-true = True
-false = False
-staircaseFlag = [false]
+staircaseFlag = [True, False]
 epochs = 3
 
 #plot cycler
